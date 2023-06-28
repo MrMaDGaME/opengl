@@ -10,9 +10,9 @@ const float FLOOR_POSITION = -0.9f;
 const float OBJECT_SPEED = 0.0f;
 const float JUMP_FORCE = 0.6f;
 const float GRAVITY = 0.01f;
-const float PIPE_WIDTH = 80.0f;
-const float PIPE_HEIGHT = 400.0f;
-const float PIPE_GAP = 300.0f;
+const float PIPE_WIDTH = 40.0f;
+const float PIPE_HEIGHT = 250.0f;
+const float PIPE_GAP = 150.0f;  // Reduced gap size
 const float PIPE_SPEED = 0.8f;
 
 float birdX = -WINDOW_WIDTH / 4;
@@ -34,13 +34,6 @@ void updateBird()
 {
     birdY += birdVelocity;
     birdVelocity -= GRAVITY;
-
-    // Check collision with floor
-    if (birdY <= FLOOR_POSITION)
-    {
-        birdY = FLOOR_POSITION;
-        birdVelocity = 0.0f;
-    }
 }
 
 void updatePipes()
@@ -49,7 +42,11 @@ void updatePipes()
     float currentTime = glfwGetTime();
     if (currentTime - lastPipeSpawnTime >= 2.5f)
     {
-        float pipeY = PIPE_GAP + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (WINDOW_HEIGHT - 2 * PIPE_GAP - PIPE_HEIGHT)));
+        float minPipeHeight = 1000.0f;
+        float maxPipeHeight = 0.65f * WINDOW_HEIGHT;
+        float pipeHeight = minPipeHeight + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxPipeHeight - minPipeHeight)));
+
+        float pipeY = WINDOW_HEIGHT / 2 - (PIPE_GAP / 2.0f) - pipeHeight / 2.0f;  // Spawn position of bottom pipe adjusted
         pipePositions.push_back(WINDOW_WIDTH / 2);
         pipePositions.push_back(pipeY);
         lastPipeSpawnTime = currentTime;
@@ -80,7 +77,7 @@ void render()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-WINDOW_WIDTH / 2, WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2, WINDOW_HEIGHT / 2, -1, 1);
+    glOrtho(-WINDOW_WIDTH / 2, WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2, WINDOW_HEIGHT / 2, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -97,10 +94,10 @@ void render()
     // Draw the floor
     glColor3f(0.0f, 0.0f, 1.0f);
     glBegin(GL_QUADS);
-    glVertex2f(-WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
-    glVertex2f(WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
-    glVertex2f(WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2);
     glVertex2f(-WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2);
+    glVertex2f(WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2);
+    glVertex2f(WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
+    glVertex2f(-WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
     glEnd();
 
     // Draw the bird
@@ -122,20 +119,20 @@ void render()
         float pipeX = pipePositions[i];
         float pipeY = pipePositions[i + 1];
 
-        // Draw upper pipe
+        // Draw bottom half of the pipe
         glBegin(GL_QUADS);
-        glVertex2f(pipeX, pipeY + PIPE_HEIGHT);
-        glVertex2f(pipeX + PIPE_WIDTH, pipeY + PIPE_HEIGHT);
-        glVertex2f(pipeX + PIPE_WIDTH, WINDOW_HEIGHT / 2);
-        glVertex2f(pipeX, WINDOW_HEIGHT / 2);
+        glVertex2f(pipeX, -WINDOW_HEIGHT / 2);
+        glVertex2f(pipeX + PIPE_WIDTH, -WINDOW_HEIGHT / 2);
+        glVertex2f(pipeX + PIPE_WIDTH, pipeY);
+        glVertex2f(pipeX, pipeY);
         glEnd();
 
-        // Draw lower pipe
+        // Draw top half of the pipe
         glBegin(GL_QUADS);
-        glVertex2f(pipeX, pipeY - PIPE_GAP);
-        glVertex2f(pipeX + PIPE_WIDTH, pipeY - PIPE_GAP);
-        glVertex2f(pipeX + PIPE_WIDTH, FLOOR_POSITION * WINDOW_HEIGHT / 2);
-        glVertex2f(pipeX, FLOOR_POSITION * WINDOW_HEIGHT / 2);
+        glVertex2f(pipeX, pipeY + PIPE_GAP);
+        glVertex2f(pipeX + PIPE_WIDTH, pipeY + PIPE_GAP);
+        glVertex2f(pipeX + PIPE_WIDTH, WINDOW_HEIGHT / 2);
+        glVertex2f(pipeX, WINDOW_HEIGHT / 2);
         glEnd();
     }
 }
