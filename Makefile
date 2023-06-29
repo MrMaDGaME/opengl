@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS :=
-LDFLAGS  := -lGL -lglfw -lglut -lGLEW -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+LDFLAGS  := -lGL -lglfw -lglut -lGLEW -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSOIL
 
 all: flappy.o
 	$(CXX) $(CXXFLAGS) flappy.cpp $(LDFLAGS) -o flappy
