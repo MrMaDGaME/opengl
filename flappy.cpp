@@ -12,11 +12,11 @@ const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const float FLOOR_POSITION = -0.9f;
 const float OBJECT_SPEED = 0.0f;
-const float JUMP_FORCE = 1.0f;
-const float GRAVITY = 0.01f;
+const float JUMP_FORCE = 2.0f;
+const float GRAVITY = 0.05f;
 const float PIPE_WIDTH = 40.0f;
 const float PIPE_HEIGHT = 250.0f;
-const float PIPE_GAP = 150.0f;
+const float PIPE_GAP = 250.0f;
 const float PIPE_SPEED = 0.8f;
 int score = 0;
 int nextPipeToCross = 0;
@@ -43,14 +43,31 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 }
 
 bool checkCollision(float birdX, float birdY, float pipeX, float pipeY) {
-    // Check if the bird collides with the pipe
-    if (birdX + 20.0f >= pipeX && birdX - 20.0f <= pipeX + PIPE_WIDTH) {
-        if (birdY + 20.0f >= pipeY || birdY - 20.0f <= pipeY - PIPE_GAP) {
-            return true;  // Collision occurred
-        }
+    // Define bird's radius
+    const float BIRD_RADIUS = 20.0f;
+    
+    // Define rectangle edges
+    float leftEdge = pipeX;
+    float rightEdge = pipeX + PIPE_WIDTH;
+    float topEdge = pipeY;
+    float bottomEdge = pipeY + PIPE_HEIGHT;
+
+    // Check if the bird is inside the pipe
+    if (birdX + BIRD_RADIUS > leftEdge && birdX - BIRD_RADIUS < rightEdge &&
+        birdY + BIRD_RADIUS > bottomEdge && birdY - BIRD_RADIUS < topEdge) {
+        return true;
     }
-    return false;  // No collision
+
+    // Check if bird is intersecting with pipe's sides
+    float closestX = std::max(leftEdge, std::min(birdX, rightEdge));
+    float closestY = std::max(bottomEdge, std::min(birdY, topEdge));
+
+    float dx = birdX - closestX;
+    float dy = birdY - closestY;
+
+    return (dx * dx + dy * dy) < (BIRD_RADIUS * BIRD_RADIUS);
 }
+
 
 void updateBird() {
     birdY += birdVelocity;
@@ -80,7 +97,7 @@ void updateBird() {
 void updatePipes() {
     // Spawn new pipe pair periodically
     float currentTime = glfwGetTime();
-    if (currentTime - lastPipeSpawnTime >= 2.5f && !gameOver) {
+    if (currentTime - lastPipeSpawnTime >= 4.0f && !gameOver) {
         float minPipeHeight = 1000.0f;
         float maxPipeHeight = 0.65f * WINDOW_HEIGHT;
         float pipeHeight = minPipeHeight + static_cast<float>(rand()) /
@@ -137,18 +154,6 @@ void render(GLuint textureID) {
     glVertex2f(-WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
     glEnd();
 
-    // Draw the bird
-    /*glPushMatrix();
-    glTranslatef(birdX, birdY, 0.0f);
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_QUADS);
-    glVertex2f(-20.0f, -20.0f);
-    glVertex2f(20.0f, -20.0f);
-    glVertex2f(20.0f, 20.0f);
-    glVertex2f(-20.0f, 20.0f);
-    glEnd();
-    glPopMatrix();*/
-
     glPushMatrix();
     glTranslatef(birdX, birdY, 0.0f);
 
@@ -159,6 +164,8 @@ void render(GLuint textureID) {
     // Activer le mélange alpha
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex2f(-20.0f, -20.0f);
