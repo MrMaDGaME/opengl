@@ -17,7 +17,7 @@ const float GRAVITY = 0.05f;
 const float PIPE_WIDTH = 40.0f;
 const float PIPE_HEIGHT = 250.0f;
 const float PIPE_GAP = 250.0f;
-const float PIPE_SPEED = 0.8f;
+const float PIPE_SPEED = 2.0f;
 int score = 0;
 int nextPipeToCross = 0;
 float birdX = -WINDOW_WIDTH / 4;
@@ -26,6 +26,7 @@ float birdVelocity = 0.0f;
 std::vector<float> pipePositions;
 float lastPipeSpawnTime = 0.0f;
 bool gameOver = false;
+int highScore = 0;
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (gameOver && key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
@@ -70,6 +71,9 @@ bool checkCollision(float birdX, float birdY, float pipeX, float pipeY) {
 
 
 void updateBird() {
+    if (gameOver) {
+        return; // Do not update bird if game is over
+    }
     birdY += birdVelocity;
     birdVelocity -= GRAVITY;
 
@@ -95,6 +99,9 @@ void updateBird() {
 }
 
 void updatePipes() {
+    if (gameOver) {
+        return; // Do not update pipes if game is over
+    }
     // Spawn new pipe pair periodically
     float currentTime = glfwGetTime();
     if (currentTime - lastPipeSpawnTime >= 4.0f && !gameOver) {
@@ -203,14 +210,24 @@ void render(GLuint textureID) {
     }
 
     // Draw the score
-    if (!gameOver) {
-        char scoreString[15];
-        sprintf(scoreString, "Score: %d", score);
-        glColor3f(1.0f, 1.0f, 1.0f);  // Set text color
-        renderBitmapString(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 50, GLUT_BITMAP_HELVETICA_18, scoreString);
-    } else {
+    char scoreString[15];
+    sprintf(scoreString, "Score: %d", score);
+    glColor3f(1.0f, 1.0f, 1.0f);  // Set text color
+    renderBitmapString(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 50, GLUT_BITMAP_HELVETICA_18, scoreString);
+
+    // Draw the high score
+    char highScoreString[25];
+    sprintf(highScoreString, "High Score: %d", highScore);
+    renderBitmapString(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 70, GLUT_BITMAP_HELVETICA_18, highScoreString);
+
+    if (gameOver) {
         glColor3f(1.0f, 1.0f, 1.0f);  // Set text color
         renderBitmapString(-50.0f, 0.0f, GLUT_BITMAP_HELVETICA_18, "Game Over");
+
+        char finalScoreString[25];
+        sprintf(finalScoreString, "Final Score: %d", score);
+        renderBitmapString(-80.0f, -25.0f, GLUT_BITMAP_HELVETICA_18, finalScoreString);  // Display final score
+
         renderBitmapString(-80.0f, -50.0f, GLUT_BITMAP_HELVETICA_18, "Press Space to Replay");
     }
     glFlush();
@@ -224,6 +241,10 @@ void update() {
     if (nextPipeToCross < pipePositions.size() && birdX > pipePositions[nextPipeToCross]) {
         score++;
         nextPipeToCross += 2;
+    }
+
+    if (score > highScore) {
+        highScore = score;
     }
 }
 
