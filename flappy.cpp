@@ -11,13 +11,12 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const float FLOOR_POSITION = -0.9f;
-const float OBJECT_SPEED = 0.0f;
 const float JUMP_FORCE = 2.0f;
 const float GRAVITY = 0.05f;
 const float PIPE_WIDTH = 40.0f;
 const float PIPE_HEIGHT = 250.0f;
-const float PIPE_GAP = 250.0f;
-const float PIPE_SPEED = 2.0f;
+const float PIPE_GAP = 180.0f;
+const float PIPE_SPEED = 3.0f;
 int score = 0;
 int nextPipeToCross = 0;
 float birdX = -WINDOW_WIDTH / 4;
@@ -104,7 +103,7 @@ void updatePipes() {
     }
     // Spawn new pipe pair periodically
     float currentTime = glfwGetTime();
-    if (currentTime - lastPipeSpawnTime >= 4.0f && !gameOver) {
+    if (currentTime - lastPipeSpawnTime >= 2.0f && !gameOver) {
         float minPipeHeight = 1000.0f;
         float maxPipeHeight = 0.65f * WINDOW_HEIGHT;
         float pipeHeight = minPipeHeight + static_cast<float>(rand()) /
