@@ -7,6 +7,9 @@
 #include <ctime>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
@@ -26,6 +29,17 @@ std::vector<float> pipePositions;
 float lastPipeSpawnTime = 0.0f;
 bool gameOver = false;
 int highScore = 0;
+GLuint pipeUpTextureID, pipeDownTextureID;
+
+std::string loadShaderSource(const char* filepath) {
+    std::ifstream shaderFile;
+    shaderFile.open(filepath);
+    std::stringstream shaderStream;
+    shaderStream << shaderFile.rdbuf();
+    shaderFile.close();
+    return shaderStream.str();
+}
+
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (gameOver && key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
@@ -182,30 +196,37 @@ void render(GLuint textureID) {
 
 // Désactiver la texture après utilisation
     glDisable(GL_TEXTURE_2D);
-
     glPopMatrix();
 
-    // Draw pipes
-    glColor3f(0.5f, 0.5f, 0.5f);
     for (size_t i = 0; i < pipePositions.size(); i += 2) {
         float pipeX = pipePositions[i];
         float pipeY = pipePositions[i + 1];
 
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, pipeDownTextureID);  // Use the bottom pipe texture
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         // Draw bottom half of the pipe
         glBegin(GL_QUADS);
-        glVertex2f(pipeX, -WINDOW_HEIGHT / 2);
-        glVertex2f(pipeX + PIPE_WIDTH, -WINDOW_HEIGHT / 2);
-        glVertex2f(pipeX + PIPE_WIDTH, pipeY);
-        glVertex2f(pipeX, pipeY);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(pipeX, -WINDOW_HEIGHT / 2);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(pipeX + PIPE_WIDTH, -WINDOW_HEIGHT / 2);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(pipeX + PIPE_WIDTH, pipeY);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(pipeX, pipeY);
         glEnd();
+
+        glBindTexture(GL_TEXTURE_2D, pipeUpTextureID);  // Use the top pipe texture
 
         // Draw top half of the pipe
         glBegin(GL_QUADS);
-        glVertex2f(pipeX, pipeY + PIPE_GAP);
-        glVertex2f(pipeX + PIPE_WIDTH, pipeY + PIPE_GAP);
-        glVertex2f(pipeX + PIPE_WIDTH, WINDOW_HEIGHT / 2);
-        glVertex2f(pipeX, WINDOW_HEIGHT / 2);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(pipeX, pipeY + PIPE_GAP);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(pipeX + PIPE_WIDTH, pipeY + PIPE_GAP);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(pipeX + PIPE_WIDTH, WINDOW_HEIGHT / 2);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(pipeX, WINDOW_HEIGHT / 2);
         glEnd();
+
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
     }
 
     // Draw the score
@@ -248,18 +269,25 @@ void update() {
 }
 
 int main(int argc, char *argv[]) {
+
     glutInit(&argc, argv);
+
     srand(static_cast<unsigned int>(time(nullptr)));
+
     if (!glfwInit()) {
         return -1;
     }
+
     GLFWwindow *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Flappy Bird", nullptr, nullptr);
+
     if (!window) {
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, keyCallback);
+    
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
@@ -269,9 +297,11 @@ int main(int argc, char *argv[]) {
 
     GLuint textureID;
 
-// Charger l'image PNG en tant que texture
-    textureID = SOIL_load_OGL_texture("images/jofa.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID,
-                                      SOIL_FLAG_INVERT_Y);
+    textureID = SOIL_load_OGL_texture("images/jofa.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+
+    pipeUpTextureID = SOIL_load_OGL_texture("images/pipe_up.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+    pipeDownTextureID = SOIL_load_OGL_texture("images/pipe_down.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+
 
 
 // Vérifier si le chargement de la texture a réussi
@@ -279,6 +309,8 @@ int main(int argc, char *argv[]) {
         std::cerr << "SOIL loading error: '" << SOIL_last_result() << "'" << std::endl;
         return 1;
     }
+
+    
 
     // Initialize the bird's starting position
     birdY = 0.0f;
