@@ -10,19 +10,10 @@ float lastPipeSpawnTime = 0.0f;
 bool gameOver = false;
 int highScore = 0;
 
-std::string loadShaderSource(const char* filepath) {
-    std::ifstream shaderFile;
-    shaderFile.open(filepath);
-    std::stringstream shaderStream;
-    shaderStream << shaderFile.rdbuf();
-    shaderFile.close();
-    return shaderStream.str();
-}
-
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    // On check si le jeu recommence
     if (gameOver && key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-        // Restart the game
         birdY = 0.0f;
         birdVelocity = 0.0f;
         pipePositions.clear();
@@ -35,66 +26,39 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     }
 }
 
-bool checkCollision(float birdX, float birdY, float pipeX, float pipeY) {
-    // Define bird's radius
-    const float BIRD_RADIUS = 20.0f;
-
-    // Define rectangle edges
-    float leftEdge = pipeX;
-    float rightEdge = pipeX + PIPE_WIDTH;
-    float topEdge = pipeY;
-    float bottomEdge = pipeY + PIPE_HEIGHT;
-
-    // Check if the bird is inside the pipe
-    if (birdX + BIRD_RADIUS > leftEdge && birdX - BIRD_RADIUS < rightEdge &&
-        birdY + BIRD_RADIUS > bottomEdge && birdY - BIRD_RADIUS < topEdge) {
-        return true;
-    }
-
-    // Check if bird is intersecting with pipe's sides
-    float closestX = std::max(leftEdge, std::min(birdX, rightEdge));
-    float closestY = std::max(bottomEdge, std::min(birdY, topEdge));
-
-    float dx = birdX - closestX;
-    float dy = birdY - closestY;
-
-    return (dx * dx + dy * dy) < (BIRD_RADIUS * BIRD_RADIUS);
-}
-
-
 void updateBird() {
+    // Si le jeu est fini l'oisseau bouge plus
     if (gameOver) {
-        return; // Do not update bird if game is over
+        return;
     }
     birdY += birdVelocity;
     birdVelocity -= GRAVITY;
 
-    // Check collision with pipes
+    // Colision
     for (size_t i = 0; i < pipePositions.size(); i += 2) {
         float pipeX = pipePositions[i];
         float pipeY = pipePositions[i + 1];
 
-        // Check if bird's position is within the pipe's boundaries
         if (birdX + 20.0f >= pipeX && birdX - 20.0f <= pipeX + PIPE_WIDTH) {
-            // Check if the bird is outside the gap
             if (birdY + 20.0f > pipeY + PIPE_GAP || birdY - 20.0f < pipeY) {
-                gameOver = true; // Collision occurred
+                gameOver = true; // On trouve une collision
                 break;
             }
         }
     }
 
-    // Check collision with floor and ceiling
+    // Collision sol et plafond
     if (birdY + 20.0f >= WINDOW_HEIGHT / 2 || birdY - 20.0f <= -WINDOW_HEIGHT / 2) {
         gameOver = true;
     }
 }
 
 void updatePipes() {
+    // Jeu fini pas de update de pipes
     if (gameOver) {
-        return; // Do not update pipes if game is over
+        return;
     }
-    // Spawn new pipe pair periodically
+    // On rajoute des tuyeaux
     float currentTime = glfwGetTime();
     if (currentTime - lastPipeSpawnTime >= 1.0f && !gameOver) {
         float minPipeHeight = 1000.0f;
@@ -107,18 +71,19 @@ void updatePipes() {
         lastPipeSpawnTime = currentTime;
     }
 
-    // Update pipe positions
+    // Position des pipe change
     for (size_t i = 0; i < pipePositions.size(); i += 2) {
         pipePositions[i] -= PIPE_SPEED;
     }
 
-    // Remove pipes that have moved off the screen
+    // Pipe a gauche de l'ecran qui sont enlever
     if (!pipePositions.empty() && pipePositions.front() + PIPE_WIDTH < -WINDOW_WIDTH / 2) {
         pipePositions.erase(pipePositions.begin(), pipePositions.begin() + 2);
-        nextPipeToCross -= 2;  // Adjust nextPipeToCross index
+        nextPipeToCross -= 2;
     }
 }
 
+// Render pour pouvoir ecrire le score
 void renderBitmapString(float x, float y, void *font, const char *string) {
     const char *c;
     glRasterPos2f(x, y);
@@ -135,7 +100,7 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // Draw the background
+    // Background
     glColor3f(0.2f, 0.3f, 0.3f);
     glBegin(GL_QUADS);
     glVertex2f(-WINDOW_WIDTH / 2, FLOOR_POSITION * WINDOW_HEIGHT / 2);
@@ -144,7 +109,7 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
     glVertex2f(-WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     glEnd();
 
-    // Draw the floor
+    // Sol
     glColor3f(0.0f, 0.0f, 1.0f);
     glBegin(GL_QUADS);
     glVertex2f(-WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2);
@@ -182,11 +147,13 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
         float pipeY = pipePositions[i + 1];
 
         glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, pipeDownTextureID);  // Use the bottom pipe texture
+        // Activation de texture
+        glBindTexture(GL_TEXTURE_2D, pipeDownTextureID);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // Draw bottom half of the pipe
+        
+        // Pipes du bas
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(pipeX, -WINDOW_HEIGHT / 2);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(pipeX + PIPE_WIDTH, -WINDOW_HEIGHT / 2);
@@ -194,9 +161,10 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
         glTexCoord2f(0.0f, 1.0f); glVertex2f(pipeX, pipeY);
         glEnd();
 
-        glBindTexture(GL_TEXTURE_2D, pipeUpTextureID);  // Use the top pipe texture
+        // Activation de texture
+        glBindTexture(GL_TEXTURE_2D, pipeUpTextureID);
 
-        // Draw top half of the pipe
+        // Pipes du haut
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(pipeX, pipeY + PIPE_GAP);
         glTexCoord2f(1.0f, 0.0f); glVertex2f(pipeX + PIPE_WIDTH, pipeY + PIPE_GAP);
@@ -204,39 +172,41 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
         glTexCoord2f(0.0f, 1.0f); glVertex2f(pipeX, WINDOW_HEIGHT / 2);
         glEnd();
 
+        // enlever les texture
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
     }
 
-    // Draw the score
+    // Score
     char scoreString[15];
     sprintf(scoreString, "Score: %d", score);
     glColor3f(1.0f, 1.0f, 1.0f);  // Set text color
     renderBitmapString(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 50, GLUT_BITMAP_HELVETICA_18, scoreString);
 
-    // Draw the high score
+    // High score
     char highScoreString[25];
     sprintf(highScoreString, "High Score: %d", highScore);
     renderBitmapString(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 70, GLUT_BITMAP_HELVETICA_18, highScoreString);
 
+    // Screen de fin de jeu
     if (gameOver) {
-        glColor3f(1.0f, 1.0f, 1.0f);  // Set text color
+        glColor3f(1.0f, 1.0f, 1.0f);
         renderBitmapString(-50.0f, 0.0f, GLUT_BITMAP_HELVETICA_18, "Game Over");
 
         char finalScoreString[25];
         sprintf(finalScoreString, "Final Score: %d", score);
-        renderBitmapString(-80.0f, -25.0f, GLUT_BITMAP_HELVETICA_18, finalScoreString);  // Display final score
+        renderBitmapString(-80.0f, -25.0f, GLUT_BITMAP_HELVETICA_18, finalScoreString);
 
         renderBitmapString(-80.0f, -50.0f, GLUT_BITMAP_HELVETICA_18, "Press Space to Replay");
     }
     glFlush();
 }
 
+// La fonction update qui est lancer chaque boucle pour update les objets.
 void update() {
     updateBird();
     updatePipes();
 
-    // Check if the bird has crossed the next pipe
     if (nextPipeToCross < pipePositions.size() && birdX > pipePositions[nextPipeToCross]) {
         score++;
         nextPipeToCross += 2;

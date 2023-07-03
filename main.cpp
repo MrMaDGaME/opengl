@@ -1,5 +1,7 @@
 #include "flappy.hh"
 
+
+// Notre main ou on creer l'ecran d'affichage et on lance la loupe du jeu
 int main(int argc, char *argv[]) {
 
     glutInit(&argc, argv);
@@ -44,10 +46,8 @@ int main(int argc, char *argv[]) {
 
 
 
-    // Initialize the bird's starting position
-//    birdY = 0.0f;
 
-    // Start the game loop
+    // On commence la loupe du jeu
     while (!glfwWindowShouldClose(window)) {
         update();
         render(textureID, pipeUpTextureID, pipeDownTextureID);

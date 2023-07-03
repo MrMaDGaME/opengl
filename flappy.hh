@@ -23,11 +23,7 @@
 #define PIPE_GAP 180.0f
 #define PIPE_SPEED 1.0f
 
-std::string loadShaderSource(const char* filepath);
-
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
-bool checkCollision(float birdX, float birdY, float pipeX, float pipeY);
 
 void updateBird();
 
