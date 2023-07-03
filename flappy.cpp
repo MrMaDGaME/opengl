@@ -27,7 +27,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 }
 
 void updateBird() {
-    // Si le jeu est fini l'oisseau bouge plus
+    // Si le jeu est fini l'oiseau bouge plus
     if (gameOver) {
         return;
     }
@@ -58,7 +58,7 @@ void updatePipes() {
     if (gameOver) {
         return;
     }
-    // On rajoute des tuyeaux
+    // On rajoute des tuyaux
     float currentTime = glfwGetTime();
     if (currentTime - lastPipeSpawnTime >= 1.0f && !gameOver) {
         float minPipeHeight = 1000.0f;
@@ -152,7 +152,7 @@ void render(GLuint textureID, GLuint pipeUpTextureID, GLuint pipeDownTextureID) 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        
+
         // Pipes du bas
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(pipeX, -WINDOW_HEIGHT / 2);
